@@ -1,0 +1,678 @@
+/*----------------------------------------------------------------------------
+    This file is a part of mi2ly a program to convert midi files to
+    the lilypond language.
+    
+    Copyright (C) 2004, 2005  Antonio Palama' (palama@inwind.it)
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+----------------------------------------------------------------------------*/
+
+
+
+1. Definitions
+
+1.1 SMF (Standard Midi File) Event
+
+A SMF event is the internal representation of the raw midi data as read from
+the midifile; no modification of the data is performed only the decompression
+of certain compression features of the midifile like running status and
+variable length delta times is performed.
+The optional stretch factor of the STRETCH directive is also applied to the 
+event time.
+The SMF event is stored in the following structure:
+
+typedef struct
+{
+   void *p;
+   unsigned char type;
+   unsigned long time;
+}
+SMF_EVENT;
+
+there are 3 possible values of type:
+
+enum smf_events
+{
+MIDI = 1, META, SYSEX
+};
+
+accordingly with the value of type, p can point to one of the 3 following 
+structures:
+
+1.1.1 Midi Event
+
+typedef struct {
+    uchar cmnd;
+    uchar channel;
+    uchar ndat;
+    uchar data[2];
+    } MIDI_EVENT;
+    
+where:
+cmnd is the midi command, one of
+
+enum midi_commands
+{
+NOTE_OFF = 0, NOTE_ON, AFTER_TOUCH_K, CONTROL_CHANGE,
+PROGRAM_CHANGE, AFTER_TOUCH_P, PITCH_WHEEL, SYSTEM_EXCLUS, MIDI_UNDEFINED = 127
+};
+
+channel is the midi channel this command points to.
+ndat is the number of data bytes needed by this command (1 or 2)
+data is the actual midi command data.
+
+
+1.1.2 Meta Event
+
+typedef struct {
+    uchar cmnd;
+    void *p;
+    } META_EVENT;
+
+where:
+cnmd is the meta command, one of
+
+enum meta_commands
+{
+SEQ_NO = 0, TEXT, COPYRIGHT, TRACK_NAME, INSTR_NAME, LYRIC, MARKER, CUE_POINT,
+MIDI_CHANNEL_PREFIX, MIDI_PORT, M_END_OF_TRACK, SET_TEMPO, SMPTE_OFF, TIME_SIG,
+KEY_SIG, SEQ_SPECIFIC, UNKNOWN
+};
+
+p points to the data bytes corresponding to the given metacommand i.e.
+
+SEQ_NO              unsigned short
+TEXT                null terminated string
+COPYRIGHT           null terminated string
+TRACK_NAME          null terminated string
+INSTR_NAME          null terminated string
+LYRIC               null terminated string
+MARKER              null terminated string
+CUE_POINT           null terminated string
+MIDI_CHANNEL_PREFIX unsigned char
+MIDI_PORT           unsigned char
+M_END_OF_TRACK      nothing (NULL pointer)
+SET_TEMPO           unsigned long
+SMPTE_OFF           SMPTE_OFFSET structure
+TIME_SIG            TIME_SIGNATURE structure
+KEY_SIG             KEY_SIGNATURE structure
+SEQ_SPECIFIC        VARLEN_DATA
+UNKNOWN             nothing (NULL pointer) data bytes are discarded.
+
+the relevant structures are the following:
+
+typedef struct 
+{
+   unsigned char hour;
+   unsigned char minute;
+   unsigned char second;
+   unsigned char frame;
+   unsigned char subframe;
+}
+SMPTE_OFFSET;
+
+typedef struct
+{
+   unsigned char nn;  /* log2(num) */
+   unsigned char dd;  /* den */
+   unsigned char cc;  /* Midi clocks per metronome tick */
+   unsigned char bb;  /* 1/32 notes per  24 midi clocks */
+}
+TIME_SIGNATURE;
+
+typedef struct
+{   
+   char sf;           /* >0 sharps, <0 flats  */
+   unsigned char mi;  /* 0 = major, 1 = minor */
+}
+KEY_SIGNATURE;
+
+typedef struct 
+{
+   unsigned long len;
+   unsigned char *data;
+}
+VARLEN_DATA;
+
+1.1.3 Sysex event
+
+typedef struct
+{
+    VARLEN_DATA *p;
+} 
+SYSEX_EVENT;
+
+1.2 Note Event
+
+A note event is the simplest higher level object used by mi2ly. All the
+midifile events are discarded; only the midi events note-on and note-off
+with the associated time, channel, velocity are used in the higher level
+analysis. The low level midifile information is always available
+through the -d 0 option.
+
+A note event is simply a note-number, its attack time and duration and its
+velocity all included in the following structure.
+
+typedef struct
+{
+   unsigned char note;
+   unsigned char velocity;
+   unsigned long time;     /* note-on time, internal units */
+   unsigned long duration; /* ULONG_MAX means duration undefined */
+} NOTE_EVENT;
+
+1.3 Music Cluster
+
+This is a provisional definition since it has not yet been implemented.
+
+A cluster is an aggregate of notes which play together. The definition is very
+broad and includes all possible configurations of notes which are not
+separated by a bit of silence. The bit of silence can have duration zero :
+1:00 G NOTE_ON
+1:50 G NOTE_OFF
+1:50 A NOTE_ON
+2:00 A NOTE_OFF
+is not a cluster while
+1:00 G NOTE_ON
+1:50 A NOTE_ON
+1:51 G NOTE_OFF
+2:00 A NOTE_OFF
+is a cluster.
+Clusters can be decomposed into simpler musical aggregates.
+A chord is a cluster.
+Absolute times are not a part of these objects; only times relative to the
+beginning of the cluster are stored.
+
+1.4 Music Event
+
+This is the simplest music cluster possible and the only one yet implemented.
+It is defined by the following structure.
+
+typedef struct{
+unsigned char type; /* ME_NOTE | ME_REST | TRIPLET_BEGIN | TRIPLET_END |
+                     * DUIN_BEGIN | DUIN_END */
+unsigned char note;
+unsigned char velocity;
+unsigned long total_duration; 
+   /* These are not real times in triplets /duins etc. */
+unsigned long note_duration;
+unsigned char flags;
+} MUSIC_EVENT;
+
+A ME_NOTE is a note followed by a rest.
+A ME_REST is a time with no sound i.e. note duration = 0
+TRIPLET_BEGIN is a pseudo event, between this event and TRIPLET_END the
+times are multiplied times 3/2.
+DUIN_BEGIN is a pseudo event, between this event and DUIN_END the
+times are multiplied times 2/3.
+
+FIXME document flags.
+
+This definition will probably have to be updated when more complex music
+clusters will be implemented.
+
+1.5 Chord Event
+
+A chord event is a number of notes played almost simultaneously. For the
+sake of music transcription, once a chord event is recognized it can be treated
+as a number of simultaneous notes played with the same velocity and the same
+duration.
+
+The following structure could be used to implement a chord event:
+
+typedef struct{
+unsigned char nn;    /* number of notes in chord */
+unsigned char *notes;
+unsigned char velocity;
+unsigned long total_duration; 
+   /* These are not real times in triplets /duins etc. */
+unsigned long note_duration;
+unsigned char flags;
+} CHORD_EVENT;
+
+1.6 Time
+
+Times, as read from the midifile are in midi ticks i.e. not a fixed unit
+but something that is defined in the midifile in the head chunck and is
+the same for all the tracks in the midifile.
+Smf_event returns times in midi_ticks so smf->time is always in midi ticks.
+Times in note-events and higher level objects are in internal units.
+
+Internal time units are defined in the constant QUARTER in mi2ly.h; 
+the present value is 15360 internal time units per quarter note. 
+This was chosen as it can be divided by 3, 5 and 2^10.
+This is probably too large, ticks per quarter note are typically 192 i.e. 
+2^6 * 3, or 240 = 2^4 * 3 * 5, or 480 2^5 * 3 * 5. 
+Nevertheless, since internal times are stored as unsigned longs this value 
+allows for 77 hours of music at 60 quarter notes per minute.
+
+Using the conversion formula
+internal_time = midi_time * 15360 / midi_ticks_per_quarter;
+there are overflow problems but 15360 should always be divisible by midi_ticks
+so it is possible to compute the conversion factor once for ever:
+factor = 15360 / midi_ticks and then convert with
+internal_time = midi_time * factor; 
+
+FIXME still to be implemented.
+
+FIXME there may be (and certainly are) overflow problems
+
+1.7 Music interval
+
+A music interval is a linked list of music events with some additional
+information as detailed in the following structure:
+
+
+typedef struct
+{
+   MUSIC_EVENT_P *first_event;
+   MUSIC_EVENT_P *last_event;
+   unsigned long total_duration;
+}
+MUSIC_INTERVAL;
+
+where MUSIC_EVENT_P is
+
+typedef struct mep
+{
+   struct mep *previous;
+   struct mep *next;
+   MUSIC_EVENT *ev;
+}
+MUSIC_EVENT_P;
+
+A music interval is usually a subset of a longer linked list which may be
+either another music interval or a measure; the music event linked list can
+then extend forward or backward. A null pointer marks the end of the linked
+list in either direction.
+
+1.7 Measure
+
+A measure is a linked list of music events with some additional
+information as detailed in the following structure:
+
+typedef struct
+{
+   MUSIC_EVENT_P *first_measure_event;   /* These are linked list pointers */
+   MUSIC_EVENT_P *last_measure_event;
+   MUSIC_EVENT *previous_measure_event;  /* NULL if not significant */
+   unsigned long duration;
+   unsigned char time_num;
+   unsigned char time_den;
+   unsigned short no;
+}
+MEASURE;
+
+where:
+previous_measure_event is the last event of the previous measure whose data
+are used in some special cases for the quantization of the first note of
+this measure;
+duration is the duration of the measure in internal time units, which is
+equal to QUARTER * 4 * time_num / time_den;
+no is the measure number (first measure is measure 0);
+
+
+2. Important structures
+
+2.1 SMF_SCANNER
+
+typedef struct 
+{
+   FILE *fmid;
+   STRETCH_DATA *str;
+   unsigned long cur_time;
+   unsigned long hlenght;
+   unsigned long format;   FIXME
+   unsigned long ntrack;   FIXME
+   unsigned long position;
+   unsigned long left_track_bytes;
+   unsigned long ticks_quarter_note; FIXME
+   unsigned short cur_track;
+   unsigned char running_status;
+   unsigned char error;
+}
+SMF_SCANNER;
+
+Creator:   smf_scanner_ist() in midi.c
+Destroyer: smf_scanner_rls() in midi.c
+
+2.2 NOTE SCANNER
+
+typedef struct
+{
+   unsigned long initial_skip_time;
+   unsigned char end_of_track;
+   unsigned char active_channel;
+   SMF_SCANNER *smf_sc;
+   NOTE_QUEUE *nq;
+} 
+NOTE_SCANNER;
+
+Creator:   note_scanner_ist()
+Destroyer: note_scanner_rls()
+
+2.3 Music event scanner
+
+typedef struct
+{
+   NOTE_SCANNER *ns;
+   NOTE_EVENT nev_old;
+   NOTE_EVENT nev;
+   unsigned char end_of_track;   
+   unsigned char first_time;
+}
+ME_SCANNER;
+
+Creator:    me_scanner_ist() in getnote.c
+Destroyer:  me_scnner_rls    in getnote.c
+
+2.4 Measure scanner
+
+typedef struct
+{
+   ME_SCANNER *mesc;
+   SMF_SCANNER *smf_sc;
+   MUSIC_EVENT_P *first_queue_event;
+   MUSIC_EVENT_P *last_measure_event;
+   MUSIC_EVENT_P *last_event;
+   MUSIC_EVENT *last_event_tied;
+   unsigned long dur_belonging_events;
+   unsigned long credit;
+   unsigned char time_num;
+   unsigned char time_den;
+   unsigned char end_of_track;
+}
+MEAS_SCANNER;
+
+Creator:    meas_scanner_ist()  in measure.c
+Destroyer:  meas_scanner_rls()  in measure.c
+
+2.5 Lilypond printer
+
+typedef struct
+{
+   FILE * fmly;
+   unsigned char slur_open;
+   unsigned char multimeasure_rests;
+   unsigned short n_multi;
+}
+LY_PRINTER;
+slur_open          is a boolean indicating if a slur is open
+multimeasure_rests is a boolean indicating if multimeasure rests are to be
+                   used
+n_multi            is the number of multimeasure rests waiting to be output
+
+Creator:   lyp_ist()
+Destroyer: lyp_rls()
+
+3. Important routines.
+
+3.1 SMF_EVENT *smf_event(SMF_SCANNER *s)
+
+This routine reads the midifile and returns a SMF event. Times are converted
+using an optional stretching table. Uses the information in s
+(pointer to midifile, stretching table etc.).
+
+File: midi.c.
+
+3.2 int get_note_event(NOTE_SCANNER *ns, NOTE_EVENT *nev)
+
+This routine gets SMF events calling smf_event(), parks them in a queue until
+a note-off midievent for the first note in the queue is found. Only midi
+events note-on and note-off are processed all other SMF events are discarded.
+Times are converted to internal time units. An initial skip time is subtracted
+from all times if required. Notes longer than MAX_NOTE_DURATION (presently
+16 * QUARTER) are forced to be terminated.
+
+Returns RC_SUCCESS or END_OF_TRACK.
+
+File: getnote.c
+
+3.3 int get_music_event(ME_SCANNER *mesc, MUSIC_EVENT *me)
+
+This routine calls get_note_event() until either an initial rest or a
+note-rest couple or a note with no following rest i.e. a note followed
+by another note with no silence inbetween is available. The three types of
+music events are completely defined by the variables total_duration and
+note_duration according to the following table
+
+rest               total_duration > 0, note_duration = 0
+note with rest     total_duration > 0, note_duration < total_duration
+note with no rest  total_duration > 0, note_duration = total_duration
+
+but the type of event is stored also in the field type with the possible values
+ME_REST and ME_NOTE which combines the two latter cases in the table.
+
+If two notes overlap the previous note is shortened in order to produce
+"note with no rest" event.
+This behaviour fails when a chord i.e. 2 or more notes with the same attack
+time is found since notes with zero total_duration and note_duration are 
+produced. A better solution in this case would be to discard all the notes
+in the chord but the highest pitch one.
+
+Returns RC_SUCCESS or END_OF_TRACK.
+
+File: getnote.c
+
+3.4 int get_measure(MEAS_SCANNER *meas, MEASURE *m)
+
+This is a rather complex routine which splits the music event stream into
+subsets which are as long as a measure.
+
+3.4.1 Preliminary processing
+
+If there is a last_event_tied in the measure scanner it is prepended as
+previous measure event of this measure.
+
+The music event queue is filled until its duration is greater than
+measure_duration, strictly greater.
+
+Any avilable credit is added to this measure's first event.
+
+3.4.2 Quantization
+
+A first quantization is performed in order to avoid
+- very short rests at the beginning of a measure
+- very short notes at the beginning of a measure tied with lastnote of
+  previous measure.
+This is done in quantize_measure_termination() along the folowing guidelines:
+
+Two time differences, delta1 and delta2 are computed, the former indicates
+how far the last event of this measure extends into next measure, the latter
+indicates how mach the attack of the last event is behind measure end.
+Both these deltas are compared with a "measure quantization tolerance"
+MEASURE_TOL.
+
+- If delta1 is 0 the measure is already quantized and nothing needs to be done.
+
+- The case of both deltas being smaller than the tolerance should never
+  happen and is treated as a fatal error.
+
+- If both deltas are larger than the tolerance the event spanning across the
+  measure's end needs to be split and no quantization is performed.
+  
+- If delta1 is smaller than tolerance, the last event of the measure is
+  shortened. Delta1 is remembered tobe used as a time credit while
+  processing next measure.
+  
+- If delta2 is smaller than tolerance, the event before last event is
+  lenghtened and last event is shortened. The event before last event is the
+  new last_event.
+  
+3.4.3 Processing the last event
+
+Last measure event is defined as the last event whose attack is inside
+the measure; this may or may not be the last event in the queue; if it is not
+this means that the last event in the queue begins exactly with next measure.
+There are three possible cases of measure temination:
+
+1) last measure event ends exacty at measur end
+2) last rest spans across measure end or exactly begins at mesure end
+3) last note spans across measure end
+
+The termination case is computed in termination_case().
+
+3.4.3.1  Processing termination case 1
+
+Nothing needs to be done.
+
+3.4.3.2  Processing termination case 2
+
+A new rest event is created and inserted as first event of next measure. The
+last event of this measure is shortened but its note part is untouched.
+Routine is split_rest_across_measure().
+
+3.4.3.3  Processing termination case 3
+
+A new note event is created and inserted as first event of next measure. The
+last event of this measure is now a note with no rest that is tied with the
+first note of next measure.
+Routine is split_note_across_measure().
+
+3.4.4 Final processing.
+
+A NO_SLUR flag is attached to last measure event if one of next conditions
+holds
+
+- last note of this measure and first note of next measure are equal but
+  not tied.
+
+- this is last measure of track
+
+- first event of next measure is a rest
+
+according to the following pseudo expression
+
+there is no next measure ||
+next event is a rest ||
+this is a note && this note is not tied && next note is equal
+
+If last measure's last event was tied with this measure's first event, this
+measure's last event is stored as last_event_tied of the measure scanner.
+
+Returns: RC_SUCCESS or END_OF_TRACK.
+
+File: measure.c
+
+3.5 int quantize_measure(MEASURE *mea)
+
+The measure queue is first copied to a music interval, the queue is the same
+but the pointers to first and last event are copied to the interval. This is
+done to have the possibility to use the same ancillary routines to split and
+quantize the sub-intervals of the measure. The last event of last measure,
+if available, is pre-pended to the interval.
+
+The division pattern follows two different lines: primary division and
+secondary division. Primary divisions generate intervals that can be further
+divided. Secondary divisions are final and cannot be further divided.
+Examples of primary division are:
+Division of a 4/4 measure in 2
+Division of a 3/4 measure in 3
+Division of a 6/8 measure in 2
+Division of a 3/8 measure/interval in 3.
+Examples of secondary division are, lilypond used for this example,
+a 2/4 intervad divided as \times 2/3{c4 c4 c4}
+a 3/4 interval divided as \times 3/2{c4 c4}
+
+When dividing measures and intervals all possible secondary divisions are
+tried first, if no secondary division matches the available music events the
+interval is split (this is a primary division) in 2 or 3 sub-intervals. Each
+sub-interval is thed quantized and the procedure continues until the
+quantization accuracy is good enough.
+
+The attacks in the measure/interval excluding the one at time 0 are counted.
+If the number of attacks is 0 this means that the interval consists of a
+single note event or a single rest event.
+
+This note is then quantized (routine quantize_first_note) as follows.
+
+- A test for degenrate notes is performed; this will be removed when the
+  program will be stable enough.
+
+- If the note duration is >= than 50% of the total duration the note
+  is treated as a full note with the following attributes.
+  
+- It is slurred with the following note if the rest is small enough.
+
+- It is treated as a normal non-slurred note if it is not slurred and
+  its duration is >= 70% of total duration
+  
+- It is treated as a staccato note if its duration is between 50% and 70%
+  of total duration.
+  
+- If the note is smaller than 50% of total duration then the basic interval
+  is divided by 2 until the note duration is between 50% and 100% of the
+  interval duration.
+  
+This procedure produces a note-rest event in which the note duration is always
+equal to the total duration of the event divided by a power of 2.
+Dotted durations like f16. r32 r8 are not produced by this procedure which
+would quantize such a sequence to f8 r8, but the procedure can easyly be
+modified should a different behaviour prove necessary.
+
+Also the choice between slurred non-slurred and staccato is based only on
+the duration of the note-rest under examination and not on the possible
+previous note tied to this note. The information about the previous note is
+in any case available in evp->previous and can be used if deemed necessary.
+
+If there is more than one note in the interval the attacks of the interval
+are compared with those of the secondary division table corresponding to the
+interval duration if available. If an acceptable secondary division is found
+the attack times are quantized to the division times and the quantization
+process is finished. Otherwise the interval is split according to the primary
+division recursively until an acceptable match is found.
+
+Returns: RC_SUCCESS or aborts.
+
+3.6 void output_measure(MEASURE *mea, LY_PRINTER *lyp)
+
+This is the main output routine.
+First of all, multimeasure rests are dealt with.
+Then a loop over the music events is run.
+If a TRIPLET_BEGIN or such a pseudo event is found the proper flags are set
+and the conversion factors are updated.
+Notes and rests are output trying to syncronize the output with the
+"strong beats" of the measure spaced according to the time signature
+e.g. 1/4 for 4/4 and 3/4, 1/8 for 3/8 and 6/8 etc.
+Routines output_rest_to_strong(), output_rest_after_strong(), 
+output_note_to_strong(), and output_note_after_strong() do the job.
+
+3.7 void lily_out_note(unsigned char note_number)
+
+This routine prints the note part (e.g. c  f,, f''!), duration excluded,
+of the note. Notes are output in relative mode, the courtesy accidental
+symbol '!' is printed if necessary.
+
+First of all the current note number is stored in a buffer. The technique
+used is a very bad brute force method of storing in an array the numbers of
+the notes output in a measure. There is also no guarantee that the buffer
+will not overflow although it is large enough for practical pourposes.
+
+This has to be replaced with something more efficient.
+
+Then the note name is output, the ambiguity flat/sharp (output ees or dis ?)
+is solved reading the note name to be used in a table whose primary index is
+the current key. I am not shure about this algorithm any suggestion will be
+highly appreciated.
+
+Then the numer of apexes or commas is computed. The algorithm used is euristic
+based on the actual behaviour of lilypond.
+
+Finally an exclamation mark is printed if the conditions for a courtesy
+accidental are met.
+
+The whole routine has to be reviewed. It is possible to use a single buffer
+both for the remember function and for the note_buffer. But now it works....
+

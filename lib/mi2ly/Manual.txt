@@ -1,0 +1,168 @@
+/*----------------------------------------------------------------------------
+    This file is a part of mi2ly a program to convert midi files to
+    the lilypond language.
+    
+    Copyright (C) 2004, 2005  Antonio Palama' (palama@inwind.it)
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+----------------------------------------------------------------------------*/
+
+
+Version 0.12.0
+
+This is not a manpage; oneday I'll write one, but for now I'm scared of it.
+
+1. Pourpose
+
+mi2ly is primarily intended to translate midi files to lilypond for
+multipart music. Each part is assumed to be sigle voiced and there is no
+provision for multiple voice translation or for chords. I intend to implement
+chords in the future but I'm not sure about when I'll have the time to do it.
+
+2. Command line options
+
+mi2ly [options] midifile
+
+Only short options are used:
+
+-c X Only events directed to channel X will be used.
+     Default (no -c option) is that all channels will be used.
+     
+-t X Only events from track X will be used.
+     Default is that only events from track 1 will be used.
+     
+-o filename
+     Use filename for output.
+     If no output filename is given mi2ly tries to guess the filename
+     according to the -d option.
+     
+-d X
+  -1  Translate to lilypond (default)
+   0  Dump midifile
+   1  Dump note events
+   2  Dump music events
+   3  Dump measures
+   4  Dump measures and quantized measures
+   5  Dump quantized measures
+   
+mi2ly expects a filename foo.mid; if present a file foo.cmd will be read
+looking for directives to the translation process.
+
+3. The directives file
+
+The directives syntax is very simple; there are two types of directives.
+
+3.1 General directives
+There is only one genral directive
+
+INITIAL_SKIP N
+
+where N is the number of quarter notes to be skipped from the
+beginning of the midifile.
+
+3.2 Numbered directives
+
+Numbered directives are in the form
+
+N COMMAND DATA
+
+where N is the measure number (base 1) from which the command will be valid.
+
+COMMAND and DATA are as follows
+
+MEASURE_DURATION where DATA is one of (4/4, 3/4, 2/4, 2/2, 3/2, 2/8, 3/8, 6/8)
+the measure duration is changed from the default value of 4/4.
+
+KEY_SIGNATURE where DATA is a signed integer between -6 and +7 indicating
+how many sharps (if positive) or how many flats (if negative) are in the 
+key signature.
+
+STRETCH where DATA is a double indicating the stretch factor to be used from
+now on; an implicit stretch factor of 1. from time 0 is assumed.
+
+
+4. Practical hints
+
+A new midi file should first be dumped using the -d0 option. Valuable
+information about the key signature, the instruments used for each track,
+the number of tracks, how many channels are used,
+the time signature etc. can be gathered from this dump and used to write
+a .cmd file.
+
+When the .cmd file is written a translation to lilypond can be attempted.
+What I usually do is to write a makefile for the various lilypond files,
+one for each instrument/track/channel, of the type
+
+mi2ly -t 1 -o foo.1.mly foo.mid
+mi2ly -t 2 -o foo.2.mly foo.mid
+mi2ly -t 3 -o foo.3.mly foo.mid
+mi2ly -t 4 -o foo.4.mly foo.mid
+
+Then write a number of .notes files which include the .mly files, a
+number of .ly files which include the .notes files, and a score.ly file 
+which includes all the .notes files.
+A typical .notes file e.g. tbone.notes may look like:
+----------------------------------------------------------
+\version "2.2.0"
+Tbone = \notes 
+\relative c 
+  {
+    \set Staff.midiInstrument = "trombone"
+      {
+	\clef "bass"
+        \include "foo.4.mly"
+      }
+  }
+----------------------------------------------------------------
+
+The corresponding tbone.ly file may look like:
+
+----------------------------------------------------------------
+\header
+{
+  title = 	 "Title"
+  instrument = "Trombone"
+  description = 	 ""
+  composer = 	 "Composer"
+  opus = ""
+}
+\version "2.2.0"
+\include "tbone.notes"
+\score 
+{
+  \notes 
+    {
+      \Tbone
+    }
+  \midi
+    {
+      \tempo 4 = 80
+    }
+  \paper
+    {
+      textheight = 26.\cm
+      interscoreline = 0.\mm
+    }
+}
+-------------------------------------------------------------------
+
+I then lilypond all the .ly files and produce the parts and the score.
+
+5. Bugs
+
+mi2ly segfaults if more than one note events have the same attack time as
+happens in chords.
+
+There are probably many other unknown bugs.

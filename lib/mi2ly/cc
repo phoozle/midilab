@@ -1,0 +1,2 @@
+gcc -o mi2ly main.c midi.c iofiles.c gen_info.c parsecmd.c \
+dump.c utils.c getnote.c measure.c transtrk.c divtbl.c output.c lilyout.c -lm
