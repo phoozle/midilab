@@ -33,7 +33,7 @@ class Midi
       track = {:name => t.name, :instrument => t.instrument}
       tracks << track
     end
-  tracks
+    tracks
   end
 
   def mpq
@@ -42,5 +42,11 @@ class Midi
 
   def measures
     @seq.get_measures
+  end
+
+  def tracks_to_array
+    n = []
+    @seq.each {|t| t.each {|e| e.print_note_names = true; n << e}}
+    n
   end
 end
