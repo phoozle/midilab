@@ -1,0 +1,7 @@
+<p><%= link_to "Back to List", midis_path %></p>
+
+<h1>Midi: <%= @midi.name %></h1>
+
+<% @midi.tracks_to_array.each do |l| %>
+<p><%= l %><p>
+<% end %>

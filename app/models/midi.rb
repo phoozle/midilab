@@ -3,18 +3,14 @@ class Midi
 
   def self.all
     Dir.chdir PATH_TO_MIDIS
-    files = Dir.glob('*.mid')
-    files.map! {|f| new(f)}
+    @files = Dir.glob('*.mid')
+    @files.map! {|f| new(f)}
   end
 
   def self.find(param)
     param.gsub!(/.mid/, '')
     Dir.chdir PATH_TO_MIDIS
-    file = new("#{param}.mid")
-  end
-
-  def name
-    File.basename(@file)
+    @file = new("#{param}.mid")
   end
 
   def initialize(midi)
@@ -23,17 +19,21 @@ class Midi
     @seq.read(@file)
   end
 
+  def name
+    File.basename(@file).gsub('.mid', '')
+  end
+
   def bpm
     @seq.bpm
   end
 
   def tracks
-    tracks = []
+    @tracks = []
     @seq.each do |t|
       track = {:name => t.name, :instrument => t.instrument}
-      tracks << track
+      @tracks << track
     end
-    tracks
+    @tracks
   end
 
   def mpq
@@ -45,8 +45,8 @@ class Midi
   end
 
   def tracks_to_array
-    n = []
-    @seq.each {|t| t.each {|e| e.print_note_names = true; n << e}}
-    n
+    @n = []
+    @seq.each {|t| t.each {|e| e.print_note_names = true; @n << e}}
+    @n
   end
 end

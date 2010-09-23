@@ -1,0 +1,6 @@
+<% form_tag '/midis', :multipart => true, :method => 'post' do %>
+  <%= file_field_tag "file" %>
+  <%= submit_tag 'Upload' %>
+<% end %>
+
+<p><%= link_to "Back to List", midis_path %></p>
