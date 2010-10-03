@@ -3,7 +3,7 @@ class Midi < ActiveRecord::Base
     unless self.new_record?
       @seq = MIDI::Sequence.new
       file = File.new("#{Rails.root}/tmp/#{self.name}", "w")
-      file.write(self.data.force_encoding('utf-8'))
+      file.write(self.data.encode('utf-8'))
       file.close
       file = File.new("#{Rails.root}/tmp/#{self.name}", "r")
       @seq.read(file)
