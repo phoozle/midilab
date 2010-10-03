@@ -1,0 +1,53 @@
+class Midi
+
+  def self.all
+    @midis = MidiFile.all
+    @midis.map! {|midi| self.new(midi)}
+  end
+
+  def self.find(param)
+    @midi = MidiFile.where(:filename => param)
+    @midi = new(@midi)
+  end
+
+  def initialize(midi)
+    @data = StringIO.new(midi.data)
+    @name = @midi.filename
+    @seq = MIDI::Sequence.new
+    begin
+    @seq.read(@data)
+    rescue EOFError
+    end
+  end
+
+  def name
+    @name
+  end
+
+  def bpm
+    @seq.bpm
+  end
+
+  def tracks
+    @tracks = []
+    @seq.each do |t|
+      track = {:name => t.name, :instrument => t.instrument}
+      @tracks << track
+    end
+    @tracks
+  end
+
+  def mpq
+    MIDI::Tempo.bpm_to_mpq(self.bpm)
+  end
+
+  def measures
+    @seq.get_measures
+  end
+
+  def tracks_to_array
+    @n = []
+    @seq.each {|t| t.each {|e| e.print_note_names = true; @n << e}}
+    @n
+  end
+end

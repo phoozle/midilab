@@ -2,6 +2,12 @@
 
 <h1>Midi: <%= @midi.name %></h1>
 
-<% @midi.tracks_to_array.each do |l| %>
-<p><%= l %><p>
-<% end %>
+<div id=info>
+<p>Beats Per Minute: <%= @midi.bpm %><p>
+</div>
+
+<div id=data>
+  <% @midi.tracks_to_array.each do |l| %>
+  <p><%= l %><p>
+  <% end %>
+</div>

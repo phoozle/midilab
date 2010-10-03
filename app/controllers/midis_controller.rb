@@ -4,16 +4,22 @@ class MidisController < ApplicationController
   end
 
   def show
-    @midi = Midi.find(params[:id])
+    @midi = Midi.where(:name => params[:id]).first
   end
 
   def new
   end
 
   def create
-    midi = params[:file]
-    name = midi.original_filename
-    file = File.new("#{Rails.root}/lib/midis/#{name}", 'w')
-    file.write(midi.read)
+    data = params[:file]
+    name = data.original_filename
+
+    midifile = Midi.new
+    midifile.name = name.gsub('.mid', nil)
+    midifile.data = data.read
+    midifile.save
+  end
+
+  def destroy
   end
 end

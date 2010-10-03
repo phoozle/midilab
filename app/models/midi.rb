@@ -1,26 +1,11 @@
-class Midi
-  PATH_TO_MIDIS = "#{Rails.root}/lib/midis"
-
-  def self.all
-    Dir.chdir PATH_TO_MIDIS
-    @files = Dir.glob('*.mid')
-    @files.map! {|f| new(f)}
-  end
-
-  def self.find(param)
-    param.gsub!(/.mid/, '')
-    Dir.chdir PATH_TO_MIDIS
-    @file = new("#{param}.mid")
-  end
-
-  def initialize(midi)
-    @file = File.new(midi)
+class Midi < ActiveRecord::Base
+  def after_initialize
     @seq = MIDI::Sequence.new
-    @seq.read(@file)
-  end
-
-  def name
-    File.basename(@file).gsub('.mid', '')
+    file = File.new("#{Rails.root}/tmp/#{self.name}", "w")
+    file.write(self.data.force_encoding('utf-8'))
+    file.close
+    file = File.new("#{Rails.root}/tmp/#{self.name}", "r")
+    @seq.read(file)
   end
 
   def bpm
@@ -34,14 +19,6 @@ class Midi
       @tracks << track
     end
     @tracks
-  end
-
-  def mpq
-    MIDI::Tempo.bpm_to_mpq(self.bpm)
-  end
-
-  def measures
-    @seq.get_measures
   end
 
   def tracks_to_array

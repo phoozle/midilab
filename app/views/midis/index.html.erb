@@ -1,14 +1,14 @@
 <table>
 <tr>
   <td>
-    Name
+    <h1>Midis:</h1>
   </td>
 </tr>
 
 <tr>
 <td>
 <% @midis.each do |m| %>
-  <%= link_to m.name, midi_path(m.name) %>
+  <%= link_to m.name, midi_path(m.name) %><br>
 <% end %>
 <td>
 <tr>
