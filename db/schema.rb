@@ -12,13 +12,6 @@
 
 ActiveRecord::Schema.define(:version => 20101003022950) do
 
-  create_table "midi_files", :force => true do |t|
-    t.string   "filename"
-    t.binary   "data"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
   create_table "midis", :force => true do |t|
     t.binary   "data"
     t.string   "name"

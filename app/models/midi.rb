@@ -1,9 +1,11 @@
 class Midi < ActiveRecord::Base
+
   def after_initialize
     unless self.new_record?
       @seq = MIDI::Sequence.new
       file = File.new("#{Rails.root}/tmp/#{self.name}", "w")
-      file.write(self.data.encode('utf-8'))
+      data = self.data
+      file.write(data)
       file.close
       file = File.new("#{Rails.root}/tmp/#{self.name}", "r")
       @seq.read(file)
