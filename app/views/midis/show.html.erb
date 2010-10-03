@@ -2,6 +2,8 @@
 
 <h1>Midi: <%= @midi.name %></h1>
 
+<%= link_to "Download Midi File", midi_path(@midi.name, :format => 'mid') %>
+
 <div id=info>
 <p>Beats Per Minute: <%= @midi.bpm %><p>
 </div>
