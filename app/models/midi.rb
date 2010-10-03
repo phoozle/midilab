@@ -1,11 +1,13 @@
 class Midi < ActiveRecord::Base
   def after_initialize
-    @seq = MIDI::Sequence.new
-    file = File.new("#{Rails.root}/tmp/#{self.name}", "w")
-    file.write(self.data.force_encoding('utf-8'))
-    file.close
-    file = File.new("#{Rails.root}/tmp/#{self.name}", "r")
-    @seq.read(file)
+    unless self.new_record?
+      @seq = MIDI::Sequence.new
+      file = File.new("#{Rails.root}/tmp/#{self.name}", "w")
+      file.write(self.data.force_encoding('utf-8'))
+      file.close
+      file = File.new("#{Rails.root}/tmp/#{self.name}", "r")
+      @seq.read(file)
+    end
   end
 
   def bpm

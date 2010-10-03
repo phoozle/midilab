@@ -15,9 +15,11 @@ class MidisController < ApplicationController
     name = data.original_filename
 
     midifile = Midi.new
-    midifile.name = name.gsub('.mid', nil)
+    midifile.name = name.gsub('.mid', '')
     midifile.data = data.read
     midifile.save
+
+    redirect_to midis_path
   end
 
   def destroy
