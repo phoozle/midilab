@@ -4,6 +4,15 @@ body {
   font-size: 14px;
 }
 
+div {
+  margin-top: 5px;
+  border-color: #989898;
+  border-style: solid;
+  border-width: 1px;
+  padding: 5px;
+  background-color: #e2e2e2;
+}
+
 a img {
   border: none;
 }

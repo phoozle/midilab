@@ -2,13 +2,14 @@ class Midi < ActiveRecord::Base
 
   def after_initialize
     unless self.new_record?
-      @seq = MIDI::Sequence.new
-      file = File.new("#{Rails.root}/tmp/#{self.name}", "w:ASCII-8BIT")
-      data = self.data
-      file.write(data)
-      file.close
-      file = File.new("#{Rails.root}/tmp/#{self.name}", "r:ASCII-8BIT")
-      @seq.read(file)
+    # Pipe data from database
+    data_r, data_w = IO.pipe
+    data_w.binmode
+    data_w.puts self.data
+    data_w.close_write
+
+    @seq = MIDI::Sequence.new
+    @seq.read(data_r)
     end
   end
 

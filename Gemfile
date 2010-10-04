@@ -2,7 +2,7 @@ source 'http://rubygems.org'
 
 gem 'rails', '3.0.0'
 gem 'midilib'
-
+gem 'jquery-rails'
 gem 'mysql', '2.8.1'
 
 # Bundle edge Rails instead:

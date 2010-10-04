@@ -34,6 +34,8 @@ GEM
     erubis (2.6.6)
       abstract (>= 1.0.0)
     i18n (0.4.1)
+    jquery-rails (0.1.2)
+      rails (~> 3.0.0.rc)
     mail (2.2.5)
       activesupport (>= 2.3.6)
       mime-types
@@ -71,6 +73,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  jquery-rails
   midilib
   mysql (= 2.8.1)
   rails (= 3.0.0)
