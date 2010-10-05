@@ -1,3 +1,5 @@
+<h1 class='popup_toggle'>Info</h1>
+
 <p><%= link_to "Back to List", midis_path %></p>
 
 <h1>Midi: <%= @midi.name %></h1>
@@ -23,10 +25,11 @@
       (meta-track)</h3>
     <% else %>
       </h3>
+    <p>Instrument: <%= t.instrument || 'undefined' %> </p>
     <% end %>
    
     <!-- Events -->
-    <h4 class="expander" data-selector='#events_<%= track_id %>'>Events</h4>
+    <h4 class="expander" data-selector='#events_<%= track_id %>'><%= t.events.length %> Events</h4>
     <div class='events' id='events_<%= track_id %>'>
     <% t.each do |e| %>
       <p class='event'><%= e.to_s %></p>

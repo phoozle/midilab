@@ -16,6 +16,17 @@
 
 </head>
 <body>
+    <div id=popup_holder>
+      <div id=popup>
+        <div id=popup_close><%= image_tag("close.png", :class => 'popup_toggle') %></div>
+        <div id=popup_content>
+          <p>This is a placeholder for information related to what ever triggered this popup.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="popup_background"></div>  
+
     <div id="container">
       <%= yield %>
     </div>
