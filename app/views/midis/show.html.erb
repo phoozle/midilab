@@ -6,11 +6,34 @@
 
 <div id=info>
 <h2>Info</h2>
-<p>Beats Per Minute: <%= @midi.bpm %><p>
+<p class=info_child><span class=bold>Tempo:</span> <%= @midi.bpm %>bpm |</p>
+<p class=info_child><span class=bold>Tracks:</span> <%= @midi.tracks.length %> | </p>
+<p class=info_child><span class=bold>Midi Format:</span> <%= @midi.format %> </p>
 </div>
 
-<div id=data>
-  <% @midi.tracks_to_array.each do |l| %>
-  <p><%= l %><p>
+<div id=tracks>
+  <h2>Tracks:</h2>
+
+  <% track_id = 0 %>
+  <% @midi.tracks.each do |t| %>
+  <div class='track' id='track_<%= track_id %>'>
+    <!-- Track nam -->
+    <h3>Track: <%= t.name %>
+    <% if track_id == 0 %>
+      (meta-track)</h3>
+    <% else %>
+      </h3>
+    <% end %>
+   
+    <!-- Events -->
+    <h4 class="expander" data-selector='#events_<%= track_id %>'>Events</h4>
+    <div class='events' id='events_<%= track_id %>'>
+    <% t.each do |e| %>
+      <p class='event'><%= e.to_s %></p>
+    <% end %>
+    </div>
+  <% track_id += 1 %>
+  </div>
   <% end %>
+
 </div>

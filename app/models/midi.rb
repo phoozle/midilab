@@ -1,7 +1,7 @@
 class Midi < ActiveRecord::Base
 
   def after_initialize
-    unless self.new_record?
+    unless new_record?
     # Pipe data from database
     data_r, data_w = IO.pipe
     data_w.binmode
@@ -17,18 +17,21 @@ class Midi < ActiveRecord::Base
     @seq.bpm
   end
 
-  def tracks
-    @tracks = []
-    @seq.each do |t|
-      track = {:name => t.name, :instrument => t.instrument}
-      @tracks << track
+  def format
+    format = case @seq.format
+      when 0 then '0 (single-track)'
+      when 1 then '1 (multiple tracks, synchronous)'
+      when 2 then '2 (multiple tracks, asynchronous)'
     end
-    @tracks
+  end
+
+  def tracks
+    @seq.tracks
   end
 
   def tracks_to_array
     @n = []
-    @seq.each {|t| t.each {|e| e.print_note_names = true; @n << e}}
+    @seq.each {|t| t.each {|e| e.print_decimal_numbers = false; @n << [e, e.class]}}
     @n
   end
 end

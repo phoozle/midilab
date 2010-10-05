@@ -9,8 +9,13 @@ div {
   border-color: #989898;
   border-style: solid;
   border-width: 1px;
-  padding: 5px;
+  padding: 10px;
   background-color: #e2e2e2;
+  border-radius: 5px;
+}
+
+.bold {
+  font-weight: bold;
 }
 
 a img {
@@ -23,10 +28,16 @@ a {
 
 h1 {
   font-size: 24px;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 10px;
 }
 
 h2 {
   font-size: 20px;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 10px;
 }
 
 h3 {
@@ -98,4 +109,25 @@ h3 {
 #errorExplanation ul li {
   font-size: 12px;
   list-style: disc;
+}
+
+.info_child {
+  display: inline;
+}
+
+.expander {
+  cursor:pointer
+}
+
+.events {
+  max-height: 300px;
+  overflow: auto;
+  background-color: #4686a6;
+  padding: 2px;
+}
+
+.event {
+  background-color: #cee8f2;
+  margin: 2px;
+  padding: 2px;
 }
