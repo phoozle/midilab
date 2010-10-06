@@ -16,11 +16,20 @@
 
 </head>
 <body>
+    <div id=nav>
+      <ul>
+        <li><h1 class=inline>Midilab: </h1></li>
+        <li><%= link_to 'Information', '/information' %></li>
+        <li><%= link_to 'Midis', midis_path %></li>
+      </ul>
+    </div>
+
     <div id=popup_holder>
       <div id=popup>
-        <div id=popup_close><%= image_tag("close.png", :class => 'popup_toggle') %></div>
+        <div id=popup_title><h1></h1></div>
+        <div id=popup_close data-popup-toggle><%= image_tag("close.png") %></div>
         <div id=popup_content>
-          <p>This is a placeholder for information related to what ever triggered this popup.</p>
+          <p id=content></p>
         </div>
       </div>
     </div>

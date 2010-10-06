@@ -14,6 +14,10 @@ div {
   border-radius: 5px;
 }
 
+.inline {
+  display: inline;
+}
+
 .bold {
   font-weight: bold;
 }
@@ -141,6 +145,12 @@ h3 {
   padding: 2px;
 }
 
+#nav ul li {
+  display: inline;
+  list-style-type: none;
+  padding-right: 20px;
+}
+
 #popup_holder {
   display: none;
   border-radius: 0px;
@@ -176,9 +186,21 @@ h3 {
 }
 
 #popup_close {
+  cursor: pointer;  
   display: block;
   height: 25px;
   float: right;
+  border-radius: 0px;
+  padding: 0px;
+  margin: 0px;
+  background-color: transparent;
+  border-style: none;
+}
+
+#popup_title {
+  display: block;
+  height: 25px;
+  float: left;
   border-radius: 0px;
   padding: 0px;
   margin: 0px;

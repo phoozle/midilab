@@ -13,17 +13,18 @@ $(document).ready(function() {
   });
 
   popup_status = 0
-  $('.popup_toggle').each(function() {
-    var about_data = $(this).attr('data-about')
+  $('[data-popup-toggle]').each(function() {
+    var info_id = $(this).attr('data-information-id')
     $(this).click(function(){
       if(popup_status == 0) {
-        $('#popup_background').fadeTo('slow', 0.5)
-        $('#popup_holder').fadeIn('slow');
+        $.getScript('/information/' + info_id + '.js')
+        $('#popup_background').fadeTo('fast', 0.85)
+        $('#popup_holder').fadeIn('fast');
         popup_status = 1
       }
       else {
-        $('#popup_background').fadeOut('slow')
-        $('#popup_holder').fadeOut('slow')
+        $('#popup_background').fadeOut('fast')
+        $('#popup_holder').fadeOut('fast')
         popup_status = 0
       }
     });

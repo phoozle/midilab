@@ -1,0 +1,12 @@
+<h1>Information</h1>
+
+<ul>
+  <% @subjects.each do |s| %>
+  <li><%= s.name %></li>
+    <ul>
+    <% s.information.each do |i| %>
+      <li><%= link_to i.title, information_path(i.title) %></li>
+    <% end %>
+    <ul>
+  <% end %>
+</ul>

@@ -10,10 +10,25 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20101003022950) do
+ActiveRecord::Schema.define(:version => 20101006081309) do
+
+  create_table "information", :force => true do |t|
+    t.string   "title"
+    t.text     "content"
+    t.string   "midi_class_name"
+    t.integer  "subject_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "midis", :force => true do |t|
     t.binary   "data"
+    t.string   "name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "subjects", :force => true do |t|
     t.string   "name"
     t.datetime "created_at"
     t.datetime "updated_at"
