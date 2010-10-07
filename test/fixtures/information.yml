@@ -9,5 +9,6 @@ noteon:
   midi_class_name: MIDI::NoteOnEvent
   subject: notes
   content: 
-    this is a test and I hope it works
-    because if it doesnt
+    A 'note on' event triggers a note to be played after x delta time.
+    It is followed by a 'note off' event which determines the length of the note by
+    the delta time of the event.
