@@ -1,5 +1,8 @@
 <h1>Information</h1>
 
+
+<%= link_to @bibliography.title, information_path(@bibliography.title) %>
+
 <ul>
   <% @subjects.each do |s| %>
   <li><%= s.name %></li>
@@ -7,6 +10,6 @@
     <% s.information.each do |i| %>
       <li><%= link_to i.title, information_path(i.title) %></li>
     <% end %>
-    <ul>
+    </ul>
   <% end %>
 </ul>

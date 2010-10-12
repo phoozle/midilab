@@ -1,6 +1,7 @@
 class InformationController < ApplicationController
   def index
     @subjects = Subject.all
+    @bibliography = Information.where(:title => 'Bibliography').first
   end
 
   def show

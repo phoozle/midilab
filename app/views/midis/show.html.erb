@@ -30,7 +30,12 @@
     <h4 class="expander" data-selector='#events_<%= track_id %>'><%= t.events.length %> Events</h4>
     <div class='events' id='events_<%= track_id %>'>
     <% t.each do |e| %>
-      <p class='event' data-popup-toggle data-information-id=<%= e.class %>><%= e.to_s %></p>
+      <% if e.class == MIDI::MetaEvent %>
+        <% information = "meta_#{e.meta_type}" %>
+      <% else %>
+        <% information = e.class %>
+      <% end %>
+      <p class='event' data-popup-toggle data-information-id=<%= information %>><%= e.to_s %></p>
     <% end %>
     </div>
   <% track_id += 1 %>

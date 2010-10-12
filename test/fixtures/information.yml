@@ -4,11 +4,109 @@
 # model remove the '{}' from the fixture names and add the columns immediately
 # below each fixture, per the syntax in the comments below
 #
+
+bibliography:
+  title: Bibliography
+  content:
+    "
+    Title: midilib<br>
+    Date Accessed: Multiple times<br>
+    Date First Accessed: 25/04/2010<br>
+    Date Last Accessed: 12/10/2010<br>
+    Author: Jim Menard <br>
+    URL: http://midilib.rubyforge.org/<br><br>
+
+    Title: Outline of the Standard MIDI File Structure<br>
+    Date Accessed: Multiple times<br>
+    Date First Accessed: 09/05/2010<br>
+    Date Last Accessed: 12/10/2010<br>
+    Author: Craig Stuart Sapp<br>
+    URL: http://253.ccarh.org/handout/smf/<br><br>
+
+    Title: MIDI File Format<br>
+    Date Accessed: Multiple times<br>
+    Date First Accessed: 09/05/2010<br>
+    Date Last Accessed: 12/10/2010<br>
+    Author: Sonic Spot<br>
+    URL: http://www.sonicspot.com/guide/midifiles.html<br><br>
+    "
+
 noteon:
   title: Note On Event
   midi_class_name: MIDI::NoteOnEvent
-  subject: notes
+  subject: channelevents
   content: 
-    A 'note on' event triggers a note to be played after x delta time.
-    It is followed by a 'note off' event which determines the length of the note by
-    the delta time of the event.
+    "A note on event triggers a note to be played after the set delta time. The delta time of
+    a note on event is in conventional music notation a rest, but instead is seen by the computer as the
+    variable length of time after the previous event that this event is to be executed.
+    The note off event (with the same note number) succeeding the note on event determines when the note is to stop playing.
+    So in comparison to conventional notation, there is no way to determine the length of a note without the succeeding note
+    off event. A note on event includes two bits of data: note number and velocity."
+
+noteoff:
+  title: Note Off Event
+  midi_class_name: MIDI::NoteOffEvent
+  subject: channelevents
+  content: 
+    "A note off event signals the midi player to stop playing a particular note number on the track which it is on. The delta time
+    of a note off event (as also mentioned in the Note On information page) determines the length of the proceeding note on event
+    for the note number defined for this event. A note off event includes two bits of data: note number and velocity."
+    
+
+meta_3:
+  title: Sequence or Track Name
+  midi_class_name: meta_3
+  subject: metaevents
+  content: 
+    "This meta event sets up the sequence's/track's name for human readability and string based identification purposes.
+    It is important to note that a track or sequence will still function perfectly fine despite no definition of a name.
+    The meta type hex identifier for this event is 0X03."
+
+meta_4:
+  title: Instrument Name
+  midi_class_name: meta_4
+  subject: metaevents
+  content: 
+    "This meta event sets up the instrument name for human readability. An instrument name does not have to be defined as
+    the instrument actually used by the midi player is defined on the midi channel rather than the track. So for instance,
+    a track may be called Piano but the sound produced is a flute! The program change event is used to define the actual
+    patch (instrument) the midi player should use for a channel."
+
+meta_32:
+  title: MIDI Channel Prefix
+  midi_class_name: meta_32
+  subject: metaevents
+  content: 
+    "Used for associating succeeding meta events or SysEx (system exclusive) messages with the defined channel number."
+
+meta_81:
+  title: Tempo
+  midi_class_name: MIDI::Tempo
+  subject: metaevents
+  content: 
+    "Defines the tempo in the format of microseconds per quarter-note(mpqn) rather than beats per minute in conventional music.
+    To calculate mpqn one must first know how many microseconds there are in a minute; there are 60,000,000. You then
+    divide 60000000 into the BPM desired for the midi. Eg 120bpm as mpqn: 60000000 / 120 = 428571.429
+    (usually rounded to a whole number). The tempo meta event is infact optional as the a player will revert to 120BPM
+    if no tempo is defined in the midi file."
+
+meta_89:
+  title: Key Signiture
+  midi_class_name: MIDI::KeySig
+  subject: metaevents
+  content: 
+    "Like most meta events, the key signature meta event doesn't really do anything apart from enable human readability.
+    Some midi players may in fact transpose hard coded note events to notes from the correct note set of the key but I am 
+    note sure on this. Therefore, unlike conventional notation, the key signature for a midi sequence is optional 
+    as midi tracks consist entirely of notes, that are in music terms, accidentals."
+
+controller:
+  title: Controller
+  midi_class_name: MIDI::Controller
+  subject: channelevents
+  content:
+    "This event signals a given channel's controller to change it's attribute to a given value.
+    There are 128 standard controllers in the midi format, these include: volume, pan, modulation, effects, etc.
+    A channel's attribute value can be changed numerous times throughout a piece. In comparision to conventional notation's 
+    dynamics for instance, a change in volumn would be represented as a value from 0-127, rather than p, f, mf, etc."
+
